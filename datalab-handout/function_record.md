@@ -35,6 +35,8 @@ int getByte(int x, int n) {
   // n<<3: expand into the bit wide. 1 Byte = 8 bits, thus need 3 here. 
   // x>>(n<<3): push the int right forward.
   // & 0xFF: use the mask to obtain the lowest byte. 
+  // Power-of-2 Multiply with shift: u << k == u * 2^k
+  // Power-of-2 Divide with shift: u >> k == u / 2^k
   return x>>(n<<3) & 0xFF;
 }
 
