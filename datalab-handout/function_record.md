@@ -52,7 +52,7 @@ int bang(int x) {
   return ~(((~x+1)|x)>>31)&1;
   }
   
-  /* 
+/* 
  * negate - return -x 
  *   Example: negate(1) = -1.
  *   Legal ops: ! ~ & ^ | + << >>
