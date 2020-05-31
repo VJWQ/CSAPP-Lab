@@ -63,4 +63,15 @@ int negate(int x) {
   return ~x+1;
 }
 
+/* 
+ * tmin - return minimum two's complement integer 
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 4
+ *   Rating: 1
+ */
+int tmin(void) {
+  // output -2*(w-1). w = 32 for integer. 
+  return 0x1<<31;
+}
+
 ```
