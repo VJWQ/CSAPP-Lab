@@ -40,4 +40,15 @@ int getByte(int x, int n) {
   return x>>(n<<3) & 0xFF;
 }
 
+/* 
+ * bang - Compute !x without using !
+ *   Examples: bang(3) = 0, bang(0) = 1
+ *   Legal ops: ~ & ^ | + << >>
+ *   Max ops: 12
+ *   Rating: 4 
+ */
+int bang(int x) {
+  /* for x != 0, the highest bit of x|(-x) will always be 1; when x == 0, the result is the opposite */
+  return ~(((~x+1)|x)>>31)&1;
+  }
 ```
