@@ -51,4 +51,16 @@ int bang(int x) {
   /* for x != 0, the highest bit of x|(-x) will always be 1; when x == 0, the result is the opposite */
   return ~(((~x+1)|x)>>31)&1;
   }
+  
+  /* 
+ * negate - return -x 
+ *   Example: negate(1) = -1.
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 5
+ *   Rating: 2
+ */
+int negate(int x) {
+  return ~x+1;
+}
+
 ```
