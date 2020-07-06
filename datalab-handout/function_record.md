@@ -1,5 +1,5 @@
 Functions: 
-bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax
+bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax, fitsBits, divpwr2, isPositive, isLessOrEqual
 
 ```c
 and: & *
@@ -72,7 +72,29 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int bitCount(int x) {
-  return 2;
+  // int mask = 0x55 + (0x55 << 8) + (0x55 << 16) + (0x55 << 24);
+  // x = (x & mask) + ((x >> 1) & mask);
+  // mask = 0x33 + (0x33 << 8) + (0x33 << 16) + (0x33 << 24);
+  // x = (x & mask) + ((x >> 2) & mask);
+  // mask = 0xF + (0xF << 8) + (0xF << 16) + (0xF << 24);
+  // x = (x & mask) + ((x >> 4) & mask);
+  // return (x + (x >> 8) + (x >> 16) + (x >> 24)) & 0xFF;
+
+  int mask1, mask2, mask4, mask8, mask16;
+  mask1 = 0x55 | 0x55 << 8; 
+  mask1 = mask1 | mask1 << 16; 
+  mask2 = 0x33 | 0x33 << 8; 
+  mask2 = mask2 | mask2 << 16; 
+  mask4 = 0x0f | 0x0f << 8; 
+  mask4 = mask4 | mask4 << 16; 
+  mask8 = 0xff | 0xff << 16; 
+  mask16 = 0xff | 0xff << 8;
+  x = (x & mask1) + ((x >> 1) & mask1); 
+  x = (x & mask2) + ((x >> 2) & mask2); 
+  x = (x + (x >> 4)) & mask4; 
+  x = (x + (x >> 8)) & mask8; 
+  x = (x + (x >> 16)) & mask16;
+  return x;
 }
 
 /* 
@@ -129,5 +151,62 @@ int isTmax(int x) {
   i = !i;
   x = x + i;
   return !x;
+}
+
+int fitsBits(int x, int n) {
+/* if fitsBits then from highest bit to n bit will all become 1 - negative number or 0 - positive number
+ * then can construct a mask to implement fitsBits with the help of ^ and !
+ */
+  // return !((x >> (n + (~1) + 1)) ^ (((1 << 31) & x) >> 31));
+
+  int shiftnum = 32 + (~n + 1); //the number of bits shifted, 32-n
+  int shiftleft = x << shiftnum; 
+  int shiftleftandright = shiftleft >> shiftnum;
+  int result = !(x ^ shiftleftandright); //if the number after shift is same as ever
+  return result;
+}
+
+/* 
+ * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
+ *  Round toward zero
+ *   Examples: divpwr2(15,1) = 7, divpwr2(-33,4) = -2
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 15
+ *   Rating: 2
+ */
+int divpwr2(int x, int n) {
+  int signx = x >> 31; //get the sign of x
+  int temp = (1 << n) + (~0); //get 1 << (n-1) in a special way; 2^n -1; (1 << n) + (~0) equals to ((1 << n) + (~1) + 1)
+  int correct = signx & temp; //add bias when x is negative
+  int result = (x + correct) >> n; //x has been corrected and can be shifted normally
+  return result; 
+}
+
+/* 
+ * isPositive - return 1 if x > 0, return 0 otherwise 
+ *   Example: isPositive(-1) = 0.
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 8
+ *   Rating: 3
+ */
+int isPositive(int x) {
+  int nsgn = !(x >> 31); // nsgn = !sgn: if sign is 1, then return 0
+  return nsgn ^ !x ;
+}
+
+/* 
+ * isLessOrEqual - if x <= y  then return 1, else return 0 
+ *   Example: isLessOrEqual(4,5) = 1.
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 24
+ *   Rating: 3
+ */
+int isLessOrEqual(int x, int y) {
+  int signx = x >> 31;
+  int signy = y >> 31;
+  int tmp = (~y + x) >> 31;
+  int same_sign = (!(signx ^ signy)) & tmp;
+  int diff_sign = signx & (!signy);
+  return same_sign | diff_sign;
 }
 ```
