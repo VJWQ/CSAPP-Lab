@@ -1,4 +1,10 @@
+Functions: 
+bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax
+
 ```c
+and: & *
+or: | +
+not: ~ -
 /* 
  * bitAnd - x&y using only ~ and | 
  *   Example: bitAnd(6, 5) = 4
@@ -7,6 +13,8 @@
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
+// De Morgan's laws: ~(p&q) = ~p|~q, ~(p|q) = ~p&~q
+/* x & y = ~(~(x&y)) = ~(~x|~y) */
   return ~(~x|~y);
 }
 
@@ -18,9 +26,11 @@ int bitAnd(int x, int y) {
  *   Rating: 1
  */
 int bitXor(int x, int y) {
+// De Morgan's laws
+// a xor b = (~a | ~b) & (a | b)
+//         = ~(a & b) & ~(~a & ~b)
   return ~(x&y)&~(~x&~y);
 }
-
 
 /* 
  * getByte - Extract byte n from word x
@@ -38,6 +48,31 @@ int getByte(int x, int n) {
   // Power-of-2 Multiply with shift: u << k == u * 2^k
   // Power-of-2 Divide with shift: u >> k == u / 2^k
   return x>>(n<<3) & 0xFF;
+}
+
+/* 
+ * logicalShift - shift x to the right by n, using a logical shift
+ *   Can assume that 0 <= n <= 31
+ *   Examples: logicalShift(0x87654321,4) = 0x08765432
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 20
+ *   Rating: 3 
+ */
+int logicalShift(int x, int n) {
+  int mask = ((1 << 31) >> n) << 1; // f0000000
+  // printf("%x\n", ~mask);
+  return (x >> n) & (~mask);
+}
+
+/*
+ * bitCount - returns count of number of 1's in word
+ *   Examples: bitCount(5) = 2, bitCount(7) = 3
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 40
+ *   Rating: 4
+ */
+int bitCount(int x) {
+  return 2;
 }
 
 /* 
@@ -70,8 +105,29 @@ int negate(int x) {
  *   Rating: 1
  */
 int tmin(void) {
-  // output -2*(w-1). w = 32 for integer. 
+  // output -2*(w-1). w = 32 for integer. 0x80000000
   return 0x1<<31;
 }
 
+/*
+ * isTmax - returns 1 if x is the maximum, two's complement number,
+ *     and 0 otherwise
+ *   Legal ops: ! ~ & ^ | +
+ *   Max ops: 10
+ *   Rating: 1
+ */
+int isTmax(int x) {
+// creates i = x plus 1 then makes x = that number plus x.
+// then flips the bits of x and bangs i, adds them and returns.
+// this effectively checks if the number was tmax
+// because if it was adding 1 would result in a leading 1.
+// you flips the bits to get 1 and add either 0 or 1
+// and return the opposite of that by banging x to get 1 for true or 0 for flase
+  int i = x + 1;
+  x = x + i;
+  x = ~x;
+  i = !i;
+  x = x + i;
+  return !x;
+}
 ```
