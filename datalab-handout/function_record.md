@@ -1,5 +1,5 @@
 Functions: 
-bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax, fitsBits, divpwr2, isPositive, isLessOrEqual
+bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax, fitsBits, divpwr2, isPositive, isLessOrEqual, ilog2, float_neg
 
 ```c
 and: & *
@@ -208,5 +208,42 @@ int isLessOrEqual(int x, int y) {
   int same_sign = (!(signx ^ signy)) & tmp;
   int diff_sign = signx & (!signy);
   return same_sign | diff_sign;
+}
+
+/*
+ * ilog2 - return floor(log base 2 of x), where x > 0
+ *   Example: ilog2(16) = 4
+ *   Legal ops: ! ~ & ^ | + << >>
+ *   Max ops: 90
+ *   Rating: 4
+ */
+int ilog2(int x) {
+/* Binary Search */
+// use (!!x) as a representation of (x!=0)
+	int result = (!!(x >> 16) << 4);
+	result = result + ((!!(x >> (result + 8))) << 3);
+	result = result + ((!!(x >> (result + 4))) << 2);
+	result = result + ((!!(x >> (result + 2))) << 1);
+	result = result + (!!(x >> (result + 1)));
+	return result;
+}
+
+/* 
+ * float_neg - Return bit-level equivalent of expression -f for
+ *   floating point argument f.
+ *   Both the argument and result are passed as unsigned int's, but
+ *   they are to be interpreted as the bit-level representations of
+ *   single-precision floating point values.
+ *   When argument is NaN, return argument.
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 10
+ *   Rating: 2
+ */
+unsigned float_neg(unsigned uf) {
+  unsigned result = uf ^ 0x80000000; // sign reverse
+  unsigned isnan = uf & 0x7fffffff;
+  if(isnan > 0x7f800000) // NaN
+  	result = uf;
+  return result;
 }
 ```
