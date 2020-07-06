@@ -1,5 +1,8 @@
-Functions: 
-bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate, tmin, isTmax, fitsBits, divpwr2, isPositive, isLessOrEqual, ilog2, float_neg
+**Functions:**  
+bitAnd, bitXor, getByte, logicalShift, bitCount, bang, negate  
+tmin, isTmax, fitsBits, divpwr2, isPositive, isLessOrEqual, ilog2  
+float_neg, float_i2f, float_twice
+
 
 ```c
 and: & *
@@ -242,8 +245,80 @@ int ilog2(int x) {
 unsigned float_neg(unsigned uf) {
   unsigned result = uf ^ 0x80000000; // sign reverse
   unsigned isnan = uf & 0x7fffffff;
-  if(isnan > 0x7f800000) // NaN
+  if(isnan > 0x7f800000) // x != NaN, return -x
   	result = uf;
-  return result;
+  return result; // return NaN itself
 }
+
+/* 
+ * float_i2f - Return bit-level equivalent of expression (float) x
+ *   Result is returned as unsigned int, but
+ *   it is to be interpreted as the bit-level representation of a
+ *   single-precision floating point values.
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 30
+ *   Rating: 4
+ */
+unsigned float_i2f(int x) {
+/* 1.process 0 individually 
+   2.process negative number and store the sign 
+   3.get the e number 
+   4.get the m number and round it 
+   5.construct the result 
+*/
+  unsigned absx = x, sign = 0; //if positive 
+  unsigned shiftnum = 0; 
+  unsigned shiftleft, temp; 
+  unsigned flag; 
+  if(!x) return 0; 
+  if(x < 0) //if negative
+  {
+    sign = 0x80000000; //sign is 1
+    absx = -x; //get absolute
+  }
+
+  shiftleft = absx; 
+  while(1) 
+  {
+    temp = shiftleft; 
+    shiftleft <<= 1;
+    ++shiftnum; 
+    if(temp & 0x80000000) break;
+  } 
+  
+  if((shiftleft&0x01ff) > 0x0100) flag = 1; 
+  else if((shiftleft&0x03ff) == 0x0300) flag = 1; 
+  else flag = 0; 
+  
+  return (sign | (shiftleft >> 9) | ((159 - shiftnum) << 23)) + flag; 
+  }
+  
+/* 
+ * float_twice - Return bit-level equivalent of expression 2*f for
+ *   floating point argument f.
+ *   Both the argument and result are passed as unsigned int's, but
+ *   they are to be interpreted as the bit-level representation of
+ *   single-precision floating point values.
+ *   When argument is NaN, return argument
+ *   Legal ops: Any integer/unsigned operations incl. ||, &&. also if, while
+ *   Max ops: 30
+ *   Rating: 4
+ */
+/*
+检查是否NaN：exp==0xff
+然后分两种情况：
+1、exp=全0的，frac<<1,exp不变
+2、exp≠全0的，exp++，检查exp==0xff，若exp==0xff，此时该数超范围（无穷大），frac=0
+取符号位：uf>>31&0x01
+取frac：uf&((1<<23)-1)
+取exp：(uf>>23)&0xff
+*/
+unsigned float_twice(unsigned uf) {
+  if(!(uf & 0x7f800000)) //if exp is 0
+  	uf = ((uf & 0x007fffff) << 1) | (uf & 0x80000000); 
+  else if((uf & 0x7f800000) != 0x7f800000) //if uf is not nan/inf
+  	uf += 0x00800000; //exp+1
+  return uf; 
+}
+
 ```
