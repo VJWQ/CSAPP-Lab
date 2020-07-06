@@ -12,6 +12,7 @@
  * it's not good practice to ignore compiler warnings, but in this
  * case it's OK.  
  */
+#include <stdio.h>
 
 #if 0
 /*
@@ -139,8 +140,8 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-  return 2;
-}
+  return ~(~x|~y);
+  }
 /* 
  * getByte - Extract byte n from word x
  *   Bytes numbered from 0 (LSB) to 3 (MSB)
@@ -150,15 +151,7 @@ int bitAnd(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-
-
-
-
-
-
-
-  return 2;
-
+  return x>>(n<<3) & 0xFF;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -169,7 +162,9 @@ int getByte(int x, int n) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+  int mask = ((1 << 31) >> n) << 1; // f0000000
+  // printf("%x\n", ~mask);
+  return (x >> n) & (~mask);
 }
 /*
  * bitCount - returns count of number of 1's in word
@@ -179,7 +174,29 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int bitCount(int x) {
-  return 2;
+  // int mask = 0x55 + (0x55 << 8) + (0x55 << 16) + (0x55 << 24);
+  // x = (x & mask) + ((x >> 1) & mask);
+  // mask = 0x33 + (0x33 << 8) + (0x33 << 16) + (0x33 << 24);
+  // x = (x & mask) + ((x >> 2) & mask);
+  // mask = 0xF + (0xF << 8) + (0xF << 16) + (0xF << 24);
+  // x = (x & mask) + ((x >> 4) & mask);
+  // return (x + (x >> 8) + (x >> 16) + (x >> 24)) & 0xFF;
+
+  int mask1, mask2, mask4, mask8, mask16;
+  mask1 = 0x55 | 0x55 << 8; 
+  mask1 = mask1 | mask1 << 16; 
+  mask2 = 0x33 | 0x33 << 8; 
+  mask2 = mask2 | mask2 << 16; 
+  mask4 = 0x0f | 0x0f << 8; 
+  mask4 = mask4 | mask4 << 16; 
+  mask8 = 0xff | 0xff << 16; 
+  mask16 = 0xff | 0xff << 8;
+  x = (x & mask1) + ((x >> 1) & mask1); 
+  x = (x & mask2) + ((x >> 2) & mask2); 
+  x = (x + (x >> 4)) & mask4; 
+  x = (x + (x >> 8)) & mask8; 
+  x = (x + (x >> 16)) & mask16;
+  return x;
 }
 /* 
  * bang - Compute !x without using !
@@ -189,7 +206,7 @@ int bitCount(int x) {
  *   Rating: 4 
  */
 int bang(int x) {
-  return 2;
+  return ~(((~x+1)|x)>>31)&1;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -198,7 +215,7 @@ int bang(int x) {
  *   Rating: 1
  */
 int tmin(void) {
-  return 2;
+  return 0x1<<31;
 }
 /* 
  * fitsBits - return 1 if x can be represented as an 
@@ -210,7 +227,16 @@ int tmin(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+/* if fitsBits then from highest bit to n bit will all become 1 - negative number or 0 - positive number
+ * then can construct a mask to implement fitsBits with the help of ^ and !
+ */
+  // return !((x >> (n + (~1) + 1)) ^ (((1 << 31) & x) >> 31));
+
+  int shiftnum = 32 + (~n + 1); //the number of bits shifted, 32-n
+  int shiftleft = x << shiftnum; 
+  int shiftleftandright = shiftleft >> shiftnum;
+  int result = !(x ^ shiftleftandright); //if the number after shift is same as ever
+  return result;
 }
 /* 
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
@@ -221,7 +247,11 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    return 2;
+  int signx = x >> 31; //get the sign of x
+  int temp = (1 << n) + (~0); //get 1 << (n-1) in a special way; 2^n -1; (1 << n) + (~0) equals to ((1 << n) + (~1) + 1)
+  int correct = signx & temp; //add bias when x is negative
+  int result = (x + correct) >> n; //x has been corrected and can be shifted normally
+  return result; 
 }
 /* 
  * negate - return -x 
@@ -231,7 +261,7 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x+1;
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -241,7 +271,8 @@ int negate(int x) {
  *   Rating: 3
  */
 int isPositive(int x) {
-  return 2;
+  int nsgn = !(x >> 31); // nsgn = !sgn: if sign is 1, then return 0
+  return nsgn ^ !x ;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -251,7 +282,12 @@ int isPositive(int x) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int signx = x >> 31;
+  int signy = y >> 31;
+  int tmp = (~y + x) >> 31;
+  int same_sign = (!(signx ^ signy)) & tmp;
+  int diff_sign = signx & (!signy);
+  return same_sign | diff_sign;
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
@@ -261,7 +297,23 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int ilog2(int x) {
-  return 2;
+/* Binary Search */
+// use (!!x) as a representation of (x!=0)
+	int result = (!!(x >> 16) << 4);
+	result = result + ((!!(x >> (result + 8))) << 3);
+	result = result + ((!!(x >> (result + 4))) << 2);
+	result = result + ((!!(x >> (result + 2))) << 1);
+	result = result + (!!(x >> (result + 1)));
+	return result;
+
+  // int bitsnum = 0; //use binary search
+  // bitsnum += ((!!(x >> (bitsnum + 16))) << 4);
+  // bitsnum += ((!!(x >> (bitsnum + 8))) << 3);
+  // bitsnum += ((!!(x >> (bitsnum + 4))) << 2);
+  // bitsnum += ((!!(x >> (bitsnum + 2))) << 1);
+  // bitsnum += (!!(x >> (bitsnum + 1)));
+  // // bitsnum += (!!bitsnum) + (~0) + (!(1 ^ x)); //correct when x=0, return -1
+  // return bitsnum;
 }
 /* 
  * float_neg - Return bit-level equivalent of expression -f for
@@ -275,7 +327,11 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
- return 2;
+  unsigned result = uf ^ 0x80000000; // sign reverse
+  unsigned isnan = uf & 0x7fffffff;
+  if(isnan > 0x7f800000) // x != NaN, return -x
+  	result = uf;
+  return result; // return NaN itself
 }
 /* 
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -287,8 +343,38 @@ unsigned float_neg(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  return 2;
-}
+/* 1.process 0 individually 
+   2.process negative number and store the sign 
+   3.get the e number 
+   4.get the m number and round it 
+   5.construct the result 
+*/
+  unsigned absx = x, sign = 0; //if positive 
+  unsigned shiftnum = 0; 
+  unsigned shiftleft, temp; 
+  unsigned flag; 
+  if(!x) return 0; 
+  if(x < 0) //if negative
+  {
+    sign = 0x80000000; //sign is 1
+    absx = -x; //get absolute
+  }
+
+  shiftleft = absx; 
+  while(1) 
+  {
+    temp = shiftleft; 
+    shiftleft <<= 1;
+    ++shiftnum; 
+    if(temp & 0x80000000) break;
+  } 
+  
+  if((shiftleft&0x01ff) > 0x0100) flag = 1; 
+  else if((shiftleft&0x03ff) == 0x0300) flag = 1; 
+  else flag = 0; 
+  
+  return (sign | (shiftleft >> 9) | ((159 - shiftnum) << 23)) + flag; 
+  }
 /* 
  * float_twice - Return bit-level equivalent of expression 2*f for
  *   floating point argument f.
@@ -300,6 +386,19 @@ unsigned float_i2f(int x) {
  *   Max ops: 30
  *   Rating: 4
  */
+/*
+检查是否NaN：exp==0xff
+然后分两种情况：
+1、exp=全0的，frac<<1,exp不变
+2、exp≠全0的，exp++，检查exp==0xff，若exp==0xff，此时该数超范围（无穷大），frac=0
+取符号位：uf>>31&0x01
+取frac：uf&((1<<23)-1)
+取exp：(uf>>23)&0xff
+*/
 unsigned float_twice(unsigned uf) {
-  return 2;
+  if(!(uf & 0x7f800000)) //if exp is 0
+  	uf = ((uf & 0x007fffff) << 1) | (uf & 0x80000000); 
+  else if((uf & 0x7f800000) != 0x7f800000) //if uf is not nan/inf
+  	uf += 0x00800000; //exp+1
+  return uf; 
 }
