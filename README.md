@@ -3,7 +3,7 @@ Practice Labs from the book CSAPP
 
 ## DataLab
 This project is designed to be run on Unix system. To make it work on Windows, install `Cygwin` and run the code ```make``` to compile the program.  
-Installed `Cygwin` packages: `gcc` `g++` etc.  
+Installed `Cygwin` packages: `gcc` `g++` `gdb` etc.  
   
 There'll be multiple errors saying that the program cannot find some modules. That's because the program should compile in 32-bit mode in the file `Makefile`, and the 64-bit machine generates conflicts when running the code. To solve this issue, simply delete the '-m32' flag in the line ```CFLAGS = -O -Wall -m32```  
   
